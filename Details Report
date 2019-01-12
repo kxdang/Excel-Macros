@@ -1,0 +1,210 @@
+Sub CheckRFQFPV() 'created by Kien Dang, feature implemented on 6/18/2018
+
+Dim wb As Workbook: Set wb = ThisWorkbook
+
+
+x = Val(Trim(Right((wb.Sheets("Checker").Range("RFQLine")), 2)))
+
+
+If Trim(Right((wb.Sheets("Checker").Range("RFQLine")), 2)) = Trim(wb.Sheets("RFQDetails").Cells(5 + x, 2)) Then
+    If wb.Sheets("Checker").Range("FPV") = wb.Sheets("RFQDetails").Cells(5 + x, 12) Then
+    wb.Sheets("Checker").Range("FPV") = wb.Sheets("RFQDetails").Cells(5 + x, 12)
+    wb.Sheets("Checker").Range("W12") = "FPV MATCHES RFQ"
+    wb.Sheets("Checker").Range("W12").Font.Color = RGB(0, 255, 0)
+    Else
+    wb.Sheets("Checker").Range("W12") = "FPV NOT MATCHING RFQ"
+    wb.Sheets("Checker").Range("W12").Font.Color = RGB(255, 0, 0)
+    wb.Sheets("RFQDetails").Rows(5 + x).Interior.ColorIndex = 44
+    MsgBox "Please fix line " & Trim(wb.Sheets("RFQDetails").Cells(5 + x, 2)) & " to: " & vbNewLine & "CPV: " & wb.Sheets("RFQDetails").Cells(5 + x, 12) & vbNewLine & "FPV: " & wb.Sheets("RFQDetails").Cells(5 + x, 13), vbExclamation, "RE-ADJUSTMENT REQUIRED"
+    End If
+        
+   Else
+End If
+
+
+End Sub
+
+Sub CheckRFQCPV() 'this will check against RFQ Details report
+
+Dim wb As Workbook: Set wb = ThisWorkbook
+
+x = Val(Trim(Right((wb.Sheets("Checker").Range("RFQLine")), 2)))
+
+If Trim(Right((wb.Sheets("Checker").Range("RFQLine")), 2)) = Trim(wb.Sheets("RFQDetails").Cells(5 + x, 2)) Then
+    If wb.Sheets("Checker").Range("CPV") = wb.Sheets("RFQDetails").Cells(5 + x, 13) Then
+    wb.Sheets("RFQDetails").Rows(5 + x).Interior.ColorIndex = 4
+    wb.Sheets("Checker").Range("W13") = "CPV MATCHES RFQ"
+    wb.Sheets("Checker").Range("W13").Font.Color = RGB(0, 255, 0)
+    Else
+    wb.Sheets("Checker").Range("W13") = "CPV NOT MATCHING RFQ"
+    wb.Sheets("Checker").Range("W13").Font.Color = RGB(255, 0, 0)
+    wb.Sheets("RFQDetails").Rows(5 + x).Interior.ColorIndex = 44
+    MsgBox "Please fix line " & Trim(wb.Sheets("RFQDetails").Cells(5 + x, 2)) & " to: " & vbNewLine & "CPV: " & wb.Sheets("RFQDetails").Cells(5 + x, 12) & vbNewLine & "FPV: " & wb.Sheets("RFQDetails").Cells(5 + x, 13), vbExclamation, "RE-ADJUSTMENT REQUIRED"
+    End If
+        
+   Else
+End If
+
+End Sub
+
+
+Sub CheckRFQDetailsExist()
+Dim ws As Worksheet
+
+For Each ws In ActiveWorkbook.Worksheets
+    If ws.Name Like "RFQDetails" Then
+    Call CheckLoopFPV
+    Call CheckLoopCPV
+    Call CheckManufacturingRFQ
+    End If
+Next ws
+End Sub
+
+Sub ReadyToPreferEmail() 'This will automatically set up my outlook ready to send to Bob to prefer
+'Updated by Extendoffice 2017/9/14
+    Dim xOutApp As Object
+    Dim xOutMail As Object
+    Dim xMailBody As String
+    On Error Resume Next
+    Set xOutApp = CreateObject("Outlook.Application")
+    Set xOutMail = xOutApp.CreateItem(0)
+    xMailBody = "Hi " + Range("AA11") + "," & vbNewLine & vbNewLine + "Please review RFQ " + Left(Range("RFQLine"), 4) + " and prefer when you have a chance" & vbNewLine & vbNewLine & _
+              "Thank you," & vbNewLine
+              
+                  On Error Resume Next
+    With xOutMail
+        .To = Range("Z12")
+        .CC = ""
+        .BCC = ""
+        .Subject = "RFQ " + Left(Range("RFQLine"), 4) + " - Ready to Prefer - " + Trim(Right(Range("RFQLine"), 2)) + " line(s)"
+        .Body = xMailBody
+        .Display
+    End With
+    On Error GoTo 0
+    Set xOutMail = Nothing
+    Set xOutApp = Nothing
+
+End Sub
+
+
+Sub YesNoMessage()
+Dim Answer As String
+Dim MyNote As String
+ 
+    'Place your text here
+    MyNote = "Is this the last line you are checking"
+ 
+    'Display MessageBox
+    Answer = MsgBox(MyNote, vbQuestion + vbYesNo, "")
+ 
+    If Answer = vbNo Then
+        MsgBox "Please the load last sandbox of RFQ"
+    Else
+        Call ReadyToPreferEmail
+    End If
+ 
+End Sub
+
+Sub CheckLoopCPV()
+
+Dim wb As Workbook: Set wb = ThisWorkbook
+
+
+'lr = Cells(Rows.Count, 2).End(xlUp).Row
+'lrminusone = lr - 1
+
+For x = 5 To 100
+    If Trim(wb.Sheets("RFQDetails").Cells(x, 2)) = Trim(Right((wb.Sheets("Checker").Range("RFQLine")), 2)) Then
+        If wb.Sheets("Checker").Range("CPV") = wb.Sheets("RFQDetails").Cells(x, 13) Then
+        wb.Sheets("RFQDetails").Rows(x).Interior.ColorIndex = 4
+        wb.Sheets("Checker").Range("W13") = "CPV MATCHES RFQ"
+        wb.Sheets("Checker").Range("W13").Font.Color = RGB(0, 255, 0)
+        Exit For
+        Else
+        wb.Sheets("Checker").Range("W13") = "CPV NOT MATCHING RFQ"
+        wb.Sheets("Checker").Range("W13").Font.Color = RGB(255, 0, 0)
+        wb.Sheets("RFQDetails").Rows(x).Interior.ColorIndex = 44
+        MsgBox "Please fix line " & Trim(wb.Sheets("RFQDetails").Cells(x, 2)) & " to: " & vbNewLine & "CPV: " & wb.Sheets("RFQDetails").Cells(x, 12) & vbNewLine & "FPV: " & wb.Sheets("RFQDetails").Cells(x, 13), vbExclamation, "RE-ADJUSTMENT REQUIRED"
+        End If
+        Exit For
+    
+    Exit For
+  
+
+    End If
+    
+Next x
+
+ 
+End Sub
+
+
+
+
+
+Sub CheckLoopFPV()
+
+Dim wb As Workbook: Set wb = ThisWorkbook
+
+
+'lr = Cells(Rows.Count, 2).End(xlUp).Row
+'lrminusone = lr - 1
+
+For x = 5 To 100
+    If Trim(wb.Sheets("RFQDetails").Cells(x, 2)) = Trim(Right((wb.Sheets("Checker").Range("RFQLine")), 2)) Then
+        If wb.Sheets("Checker").Range("FPV") = wb.Sheets("RFQDetails").Cells(x, 12) Then
+        wb.Sheets("RFQDetails").Rows(x).Interior.ColorIndex = 4
+        wb.Sheets("Checker").Range("W12") = "FPV MATCHES RFQ"
+        wb.Sheets("Checker").Range("W12").Font.Color = RGB(0, 255, 0)
+        Exit For
+        Else
+        wb.Sheets("Checker").Range("W12") = "FPV NOT MATCHING RFQ"
+        wb.Sheets("Checker").Range("W12").Font.Color = RGB(255, 0, 0)
+        wb.Sheets("RFQDetails").Rows(x).Interior.ColorIndex = 44
+        MsgBox "Please fix line " & Trim(wb.Sheets("RFQDetails").Cells(x, 2)) & " to: " & vbNewLine & "CPV: " & wb.Sheets("RFQDetails").Cells(x, 12) & vbNewLine & "FPV: " & wb.Sheets("RFQDetails").Cells(x, 13), vbExclamation, "RE-ADJUSTMENT REQUIRED"
+        
+        End If
+        Exit For
+    
+    Exit For
+  
+
+    End If
+    
+Next x
+
+
+End Sub
+
+Sub CheckManufacturingRFQ()
+
+Dim wb As Workbook: Set wb = ThisWorkbook
+
+
+For x = 5 To 100
+    If Trim(wb.Sheets("RFQDetails").Cells(x, 2)) = Trim(Right((wb.Sheets("Checker").Range("RFQLine")), 2)) Then
+        If wb.Sheets("Checker").Range("P54") = wb.Sheets("RFQDetails").Cells(x, 14) Then
+        wb.Sheets("RFQDetails").Rows(x).Interior.ColorIndex = 4
+        wb.Sheets("Checker").Range("PlantRFQCheck") = "MATCHES RFQ"
+        wb.Sheets("Checker").Range("PlantRFQCheck").Font.Color = RGB(0, 255, 0)
+        Exit For
+        Else
+        wb.Sheets("Checker").Range("PlantRFQCheck") = "NOT MATCHING RFQ"
+        wb.Sheets("Checker").Range("PlantRFQCheck").Font.Color = RGB(255, 0, 0)
+        wb.Sheets("RFQDetails").Rows(x).Interior.ColorIndex = 44
+        MsgBox "Please fix line " & Trim(wb.Sheets("RFQDetails").Cells(x, 2)) & " to: " & vbNewLine & "Plant: " & wb.Sheets("RFQDetails").Cells(x, 14), vbExclamation, "RE-ADJUSTMENT REQUIRED"
+        
+        End If
+        Exit For
+    
+    Exit For
+  
+
+    End If
+    
+Next x
+
+End Sub
+
+
+
