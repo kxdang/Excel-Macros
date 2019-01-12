@@ -1,0 +1,10 @@
+Sub Import_RFQDetails()
+
+    Workbooks("RFQDetails.xls").Sheets("RFQDetails").Activate
+    Sheets("RFQDetails").Copy After:=Workbooks("SANDBOXCHECKER v1.32.xlsm").Sheets _
+(3)
+    Worksheets("Checker").Activate
+    MsgBox "Import Successful!"
+End Sub
+
+
