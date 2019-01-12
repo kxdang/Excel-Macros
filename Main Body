@@ -1,0 +1,298 @@
+Sub PasteData() 'CREATED BY KIEN DANG 10/31/2017 HAPPY HALLOWEEENN
+
+ActiveSheet.Paste Destination:=Worksheets("Checker").Range("A15")
+Range("RFQLine") = Cells(20, 16).Value
+Range("FPV") = Cells(35, 16).Value
+Range("CPV") = Cells(36, 16).Value
+
+Call ClearPictures
+
+
+End Sub
+
+
+Sub ClearPictures()
+
+Dim Pic As Object
+For Each Pic In ActiveSheet.Pictures
+Pic.Delete
+Next Pic
+End Sub
+
+Sub ClearAll()
+
+Rows("15:120").Delete
+Range("T3:T11").ClearContents
+Application.GoTo Reference:="Remove1"
+    Selection.ClearContents
+Application.GoTo Reference:="Added1"
+    Selection.ClearContents
+Range("RFQLine").ClearContents
+Range("FPV").ClearContents
+Range("CPV").ClearContents
+Range("W12:W13").ClearContents
+Range("PlantRFQCheck").ClearContents
+    
+End Sub
+
+Sub ClearLog()
+
+Application.GoTo Reference:="Remove1"
+    Selection.ClearContents
+Application.GoTo Reference:="Added1"
+    Selection.ClearContents
+End Sub
+
+
+
+Sub CheckSandbox()
+
+Call ClearLog
+Call CheckPart
+Call CheckCostModel
+Call CheckModelScrap
+Call ChemicalCheck
+Call CheckCurrency
+Call ManufacturingCheck
+Call CheckBOMComponents
+Call CheckForZero
+Call CheckFPVCPV
+Call PackageOfflineCostCheck
+Call CheckRFQDetailsExist
+
+MsgBox "Sandbox Checked"
+
+End Sub
+Sub CheckPart()
+
+If Range("E41") = Range("P41") And Range("E42") = Range("P42") And Range("E43") = Range("P43") And Range("E44") = Range("P44") Then
+    Range("Part") = "Good"
+    Range("Part").Font.Color = RGB(0, 255, 0)
+Else:  Range("Part") = "Part has new dimensions"
+       Range("Part").Font.Color = vbRed
+End If
+
+If Not Cells(49, 5) = Cells(49, 16) Then
+    Range("Part") = Range("Part") & " and Moulding Line Change"
+    Cells(49, 16).Interior.Color = vbRed
+Else
+End If
+
+
+
+End Sub
+Sub CheckCostModel()
+
+If Range("E56") = Range("P56") Then
+    Range("CostModel") = "Good"
+    Range("CostModel").Font.Color = RGB(0, 255, 0)
+    Rows(56).Interior.ColorIndex = 0
+Else
+    Range("CostModel") = Range("E56").Text & " Model is not the same as " & Range("P56").Text & " Model"
+    Range("CostModel").Font.Color = vbRed
+    Rows(56).Interior.ColorIndex = 45
+End If
+
+End Sub
+
+
+Sub CheckModelScrap()
+If Range("E52") = Range("P52") And Cells(53, 11) = Cells(53, 22) Then
+    Range("ScrapCheck") = "Good"
+    Range("ScrapCheck").Font.Color = RGB(0, 255, 0)
+    Range("P52").Interior.ColorIndex = 0
+Else
+    Range("ScrapCheck") = "Scrap Override Required"
+    Range("ScrapCheck").Font.Color = RGB(255, 0, 0)
+    Range("P52").Interior.ColorIndex = 45
+    Rows(53).Interior.ColorIndex = 45
+End If
+
+
+End Sub
+
+Sub ChemicalCheck()
+
+lr = Cells(Rows.Count, 1).End(xlUp).Row
+lrminusone = lr - 1
+
+For x = 58 To 69
+
+    If Cells(x, 1).Value = "Total Chemical" And Cells(x, 5) > (Cells(x, 16)) Then
+        Range("ChemQty") = "Chemical Decrease"
+        Range("ChemQty").Font.Color = vbRed
+        Rows(x).Interior.ColorIndex = 19
+    ElseIf Cells(x, 1).Value = "Total Chemical" And Cells(x, 5) < (Cells(x, 16)) Then
+        Range("ChemQty") = "Chemical Increase"
+        Range("ChemQty").Font.Color = vbRed
+        Rows(x).Interior.ColorIndex = 19
+    ElseIf Cells(x, 1).Value = "Total Chemical" And Cells(x, 5) = (Cells(x, 16)) Then
+        Range("ChemQty") = "Good"
+        Range("ChemQty").Font.Color = vbGreen
+    End If
+    
+Next x
+    
+            
+   
+End Sub
+
+Sub CheckCurrency()
+
+If Range("E57") = Range("P57") Then
+    Range("CurrencyCheck") = "Good"
+    Range("CurrencyCheck").Font.Color = RGB(0, 255, 0)
+    Rows(57).Interior.ColorIndex = 0
+Else
+    Range("CurrencyCheck") = "Wrong Currency"
+    Range("CurrencyCheck").Font.Color = vbRed
+    Rows(57).Interior.ColorIndex = 45
+End If
+End Sub
+
+Sub ManufacturingCheck()
+If Range("E54") = Range("P54") Then
+    Range("Manu") = "Good"
+    Range("Manu").Font.Color = RGB(0, 255, 0)
+    Rows(54).Interior.ColorIndex = 0
+Else
+    Range("Manu") = "Wrong Plant!!"
+    Range("Manu").Font.Color = vbRed
+    Rows(54).Interior.ColorIndex = 45
+End If
+
+End Sub
+
+
+Sub CheckBOMComponents()
+
+lr = Cells(Rows.Count, 1).End(xlUp).Row
+lrminusone = lr - 1
+
+For x = 58 To lrminusone
+    If Not Cells(x, 6) = Cells(x, 17) And Not Cells(x, 1).Value = "SGA (percentage of above)" Then
+    
+    
+    Range("BOMChange") = "Detected"
+    Range("BOMChange").Font.Color = RGB(255, 102, 0)
+        If IsEmpty(Cells(x, 6)) And Not IsEmpty(Cells(x, 17)) Then ' checks whether something has been added by making sure the left sandbox is empty and the right is not
+            If Len(Cells(x, 4)) > 5 Then
+            Range("Added1") = Range("Added1") & Cells(x, 4) & " " & Cells(x, 1) & " QTY: " & Cells(x, 17) & " " & Cells(x, 19) & vbNewLine
+            Rows(x).Interior.ColorIndex = 42
+            Else
+            Range("Added1") = Range("Added1") & Cells(x, 1) & " QTY: " & Cells(x, 17) & " " & Cells(x, 19) & vbNewLine
+            Rows(x).Interior.ColorIndex = 42
+            End If
+            
+            If IsNumeric(Cells(x, 25)) And Cells(x, 25) = 0 Then ' triggers and let user know something isn't costed yet
+                Cells(x, 25).Interior.Color = vbRed
+                Range("PieceCost") = Cells(x, 4) & " not costed! Check Below" 'will change this range to notify but need to fix it after its been toggled through
+                Range("PieceCost").Font.Color = vbRed
+            Else
+            End If
+            
+        ElseIf Not IsEmpty(Cells(x, 6)) And IsEmpty(Cells(x, 17)) Then ' checks whether something has been removed by making sure the left sandbox has a number and the right does not
+            If Len(Cells(x, 4)) > 5 Then
+            Range("Remove1") = Range("Remove1") & Cells(x, 4) & " " & Cells(x, 1) & " QTY: " & Cells(x, 6) & " " & Cells(x, 8) & vbNewLine
+            Rows(x).Interior.ColorIndex = 45
+            Else
+            Range("Remove1") = Range("Remove1") & Cells(x, 1) & " QTY: " & Cells(x, 6) & " " & Cells(x, 8) & vbNewLine
+            Rows(x).Interior.ColorIndex = 45
+            End If
+            
+        Else
+        Rows(x).Interior.ColorIndex = 45
+        Range("BOMChange") = "BOM QTY Change"
+        End If
+    
+    Else
+        
+    End If
+Next x
+
+End Sub
+Sub CheckForZero() 'this code will check all the numbers in the new BOM for any zeros and will colour them Red, until
+
+lr = Cells(Rows.Count, 1).End(xlUp).Row
+lrminusone = lr - 1
+
+For x = 58 To lrminusone
+
+    If Len(Cells(x, 25)) >= 1 And Cells(x, 25) = 0 And Not Cells(x, 1).Value = "Annual Volume Premium" And Not Cells(x, 1).Value = "Delta PECT (Total)" Then 'isnumeric considered blank cell zero, so we cannot use that, had to use length instead to signify a number since blank length is 0, shows false positive with annual volume premium
+        Cells(x, 25).Interior.Color = vbRed
+        Range("PieceCost") = "Component Cost Missing! See below!"
+        Range("PieceCost").Font.Color = vbRed
+        Exit For
+    Else
+    Range("PieceCost") = "Good"
+    Range("PieceCost").Font.Color = vbGreen
+    End If
+    
+Next x
+    
+    
+
+
+End Sub
+
+
+Sub CheckFPVCPV()
+
+    If Range("FPV") = Range("CPV") Then
+    Range("FPVCPV") = "Equal - Good"
+    Range("FPVCPV").Font.Color = vbGreen
+    
+    ElseIf Range("FPV") > Range("CPV") Then
+    Range("FPVCPV") = "FPV > CPV - Please check with BDM"
+    Range("FPVCPV").Font.Color = vbRed
+    
+    ElseIf (1 - Abs((Range("FPV") / Range("CPV")))) <= 0.2 Then
+    Range("FPVCPV") = "Within 20%"
+    Range("FPVCPV").Font.Color = vbGreen
+     
+    Else
+    Range("FPVCPV") = "Check with BDM values not within 20%"
+    Range("FPVCPV").Font.Color = vbRed
+    End If
+
+End Sub
+
+Sub ScrapComponentCheck() 'Not in use yet
+
+lr = Cells(Rows.Count, 1).End(xlUp).Row
+lrminusone = lr - 1
+
+For x = 58 To lrminusone
+
+    If Cells(x, 1) = "Scrap Total" Then
+        If Cells(x, 14) - Cells(x, 25) < 0 Then
+        Range("ScrapComp") = "Good"
+        Range("ScrapComp").Font.Color = vbGreen
+        Else
+        Range("ScrapComp") = "Check Topperpad/Spacer Scrap"
+        Range("ScrapComp").Font.Color = vbRed
+        End If
+        
+    End If
+Next x
+
+End Sub
+
+Sub PackageOfflineCostCheck()
+
+lr = Cells(Rows.Count, 1).End(xlUp).Row
+lrminusone = lr - 1
+
+For x = 58 To lrminusone
+
+    If Cells(x, 1) = "Packaging / Dunnage" Or Cells(x, 1) = "Offline Operations" Then
+        If Not Cells(x, 14) = Cells(x, 25) Then
+        Rows(x).Interior.ColorIndex = 45
+        Else: End If
+    
+
+    End If
+    
+Next x
+
+End Sub
